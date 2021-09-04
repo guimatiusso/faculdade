@@ -48,12 +48,12 @@ int main () {
                  * TODO: CALCULE O OFFSET DE GRAVAÇÃO
                  *       FAZER SEEK PARA OFFSET E ESCREVER BUFFER EM ARQ
                 */
-                le_registros(nome_arq, arq, rrn);
+                le_registros(nome_arq, arq);
                 printf("Deseja modificar esse registro?");
                 printf("    Responda S ou N, seguido de <ENTER> ->");
-                input(strtolower(alterar), 5);
+                input(alterar, 5);
 
-                if (alterar == 's') {
+                if (alterar == "s" || alterar == "S") {
                     escreve_registros(nome_arq, arq);
                 }
                 /*

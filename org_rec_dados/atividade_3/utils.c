@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define TAM_BUFFER 120
+
 int input (char str[], int size) {
     int i = 0;
     char c = getchar();
@@ -19,15 +21,6 @@ int input (char str[], int size) {
 void concatenar(char str_1[], char str_2[]){
     strcat(str_1, str_2);
     strcat(str_1, "|");
-}
-
-void strtolower (char str_1[], char str_2[]) {
-    int i = 0;
-    while (s1[i] != '\0') {
-        s2[i] = tolower(s1[i]);
-        i++;
-    }
-    s2[i] = '\0';
 }
 
 short leia_reg(char buffer[], int tam, FILE *entrada){

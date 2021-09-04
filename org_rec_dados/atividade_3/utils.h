@@ -13,11 +13,6 @@ int input (char str[], int size);
 */
 void concatenar(char str_1[], char str_2[]);
 
-/*
- * transforma uma string em minusculo
-*/
-void strtolower(char s1[], char s2)[];
-
 short leia_reg(char buffer[], int tam, FILE *entrada);
 
 /*
