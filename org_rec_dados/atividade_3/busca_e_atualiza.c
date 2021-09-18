@@ -1,81 +1,71 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include "utils.h"
 
-int main () {
-    FILE *arq;
-    char nome_arq[25];
-    char alterar[5];
-    int opcao;
-    int rrn;
+#define COMP_REG 64
+#define DELIM_STR "|"
+
+struct {
     int cont_reg;
+} cab; //cabeçalho do arquivo - 4 bytes
 
-    printf("Informe o nome do arquivo: ");
-    input(nome_arq, 25);
+int main() {
+    FILE *arq;
+    int i, opcao, rrn;
+    int byte_offset;
+    char nome_arq[20];
+    char buffer[COMP_REG+1];
 
-    // if ((arq = fopen(arq, "a+")) == NULL) {
-    //     fprintf(stderr, "O arquivo %s não está disponível", nome_arq);
-    //     return EXIT_FAILURE;    
-    // }
+    printf("Digite o nome do arquivo de registros: ");
+    input(nome_arq, 20);
 
-    printf("\n\n    PROGRAMA PARA INSERCAO E ALTERACAO DE REGISTROS\n\n");
-    printf("Suas opcoes sao:\n\n");
-    printf("    1. Inserir um novo registro\n");
-    printf("    2. Buscar um registro por RRn para alteracoes\n");
-    printf("    3. Terminar o programa");
-    printf("\n\n Digite o numero da sua escolha: ");
-    scanf("%d", &opcao);
-
-    while (opcao < 3) {
-        switch (opcao) {
-            case 1:
-                escreve_registros(nome_arq, arq);
-                /*
-                 * TODO: CALCULE O OFFSET DE GRAVAÇÃO
-                 *       FAZER SEEK PARA OFFSET E ESCREVER BUFFER EM ARQ
-                 *       INCREMENTAR CAB.CONT_REG
-                */ 
-            break;
-
-            case 2:
-                printf("Digite o RRN do registro: ");
-                scanf("%d", &rrn);
-                if (rrn >= cont_reg){
-                    printf("Esse registro não existe.");
-                    return EXIT_FAILURE;   
-                }
-                /*
-                 * TODO: CALCULE O OFFSET DE GRAVAÇÃO
-                 *       FAZER SEEK PARA OFFSET E ESCREVER BUFFER EM ARQ
-                */
-                le_registros(nome_arq, arq);
-                printf("Deseja modificar esse registro?");
-                printf("    Responda S ou N, seguido de <ENTER> ->");
-                input(alterar, 5);
-
-                if (alterar == "s" || alterar == "S") {
-                    escreve_registros(nome_arq, arq);
-                }
-                /*
-                 * TODO: CALCULE O OFFSET DE GRAVAÇÃO
-                 *       FAZER SEEK PARA OFFSET E ESCREVER BUFFER EM ARQ
-                */
-            break;
-        }
-
-        printf("\n\n    PROGRAMA PARA INSERCAO E ALTERACAO DE REGISTROS\n\n");
-        printf("Suas opcoes sao:\n\n");
-        printf("    1. Inserir um novo registro\n");
-        printf("    2. Buscar um registro por RRn para alteracoes\n");
-        printf("    3. Terminar o programa");
-        printf("\n\n Digite o numero da sua escolha: ");
-        scanf("%d", &opcao);
+    if ((arq = fopen(nome_arq, "r+b")) == NULL) {
+        arq = fopen(nome_arq, "w+b");
+        cab.cont_reg = 0;
+        fwrite(&cab, sizeof(cab), 1, arq);
+    } else {
+        fread(&cab, sizeof(cab), 1, arq);
     }
 
-    /*
-    * TODO: FAZER SEEK PARA INICIO DE ARQ
-    *       ESCREVA CAB EM ARQ
-    */
+    while ((opcao = menu()) < 3) {
+
+        switch(opcao) {
+            case 1: // inserção
+                printf("Digite os dados para o novo registro\n\n");
+                pedir_campos(buffer);
+                byte_offset = cab.cont_reg * COMP_REG + sizeof(cab);
+                fseek(arq, (long) byte_offset, SEEK_SET);
+                fwrite(buffer, COMP_REG, 1, arq);
+                cab.cont_reg++;
+                break;
+
+            case 2: // busca e alteração
+                rrn = pedir_rrn();
+
+                if (rrn >= cab.cont_reg) {
+                    printf("O RRN eh muito grande... RRN max = %d", cab.cont_reg-1);
+                    printf("... retornando ao menu ...");
+                    break;
+                }
+
+                byte_offset = rrn * COMP_REG + sizeof(cab);
+                fseek(arq, (long) byte_offset, SEEK_SET);
+
+                ler_e_mostrar(arq);
+
+                if (alterar()) {
+                    printf("\n\nDigite os novos dados do registro: \n\n");
+                    pedir_campos(buffer);
+                    fseek(arq, (long) byte_offset, SEEK_SET);
+                    fwrite(buffer, COMP_REG, 1, arq);
+                }
+                break;
+        }
+    }
+
+    rewind(arq);
+    fwrite(&cab, sizeof(cab), 1, arq);
 
     fclose(arq);
 

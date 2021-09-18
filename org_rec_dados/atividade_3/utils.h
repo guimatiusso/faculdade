@@ -2,27 +2,20 @@
 #define _UTILS_H_ 1
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-/*
- * Insere uma string em uma variável
-*/
-int input (char str[], int size);
+int input(char *str, int size);
+int input_int();
+void concatena_campo(char *buffer, char *campo);
+char ucase(char);
+char input_char();
+int menu();
+void pedir_campos(char *);
+int pedir_rrn();
+void ler_e_mostrar();
+int alterar();
 
-/*
- * Concatena duas strings com o separador "|"
-*/
-void concatenar(char str_1[], char str_2[]);
 
-short leia_reg(char buffer[], int tam, FILE *entrada);
-
-/*
- * Escreve registros em um arquivo binario
-*/
-int escreve_registros (char nome_arq[], FILE *saida );
-
-/*
- * Le registros em um arquivo binario
-*/
-int le_registros(char nome_arq[], FILE *entrada);
 
 #endif
