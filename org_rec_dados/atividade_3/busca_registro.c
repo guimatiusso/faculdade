@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdbool.h>
 
 #define TAM_BUFFER 120
@@ -54,7 +55,7 @@ int main () {
     while (!achou && (leia_reg(buffer, TAM_BUFFER, entrada)) > 0) {
         sobrenome = strtok(buffer, "|");  
 
-        if (strcmp(sobrenome,sobrenome_busca) == 0){
+        if (strcasecmp(sobrenome,sobrenome_busca) == 0){
             achou = true;
         }
     }
@@ -64,16 +65,14 @@ int main () {
         return EXIT_FAILURE; 
     }
 
-    if (achou) {
-        printf("\n\nRegistro encontrado:\n\n");
-        i = 1;
-        printf("    Campo #%d: %s \n", i, sobrenome);
-        campo = strtok(NULL, "|");
+    printf("\n\nRegistro encontrado:\n\n");
+    i = 1;
+    printf("    Campo #%d: %s \n", i, sobrenome);
+    campo = strtok(NULL, "|");
 
-        while (campo != NULL) {
-            printf("    Campo #%d: %s \n", ++i, campo);
-            campo = strtok(NULL, "|");
-        }
+    while (campo != NULL) {
+        printf("    Campo #%d: %s \n", ++i, campo);
+        campo = strtok(NULL, "|");
     }
 
     fclose(entrada);
