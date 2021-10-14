@@ -55,36 +55,109 @@ int leia_campo(char str[], int tam, FILE *entrada){
     return i;
 }
 
-int ler_e_mostrar(FILE *arq, int qtde_reg, char *chave_busca) {
+struct {
+    int cont_reg;
+} cab; //cabeçalho do arquivo - 4 bytes
+
+int get_ultimo_registro(FILE *arq) {
+    // FILE *arq;
+    char *ped;
+    char buffer[COMP_REG + 1];
+    int rrn, byte_offset, aux, primeiro;
+
+    // if ((arq = fopen("dados.dat", "r+b")) == NULL) {
+    //     printf("Ocorreu um erro ao abrir o arquivo");
+    // }
+
+    rewind(arq);
+    fread(&cab, sizeof(cab), 1, arq);
+
+    byte_offset = cab.cont_reg * COMP_REG + sizeof(cab);
+
+    printf("\nbyte_offset %d", byte_offset);
+
+    fseek(arq, (long) byte_offset, SEEK_SET);
+    fread(buffer, COMP_REG, 1, arq);
+
+    if (!strtok(buffer, "$")) {
+        printf("estou aqui");
+        return cab.cont_reg;
+    }
+
+    while (strtok(buffer, "$")) {
+
+        ped = strtok(buffer, "$");
+        aux = atoi(strtok(buffer, "$"));
+
+        printf("\nProxima Posicao:%s", ped);
+
+        rrn = atoi(strtok(buffer, "$"));
+
+        if (rrn == aux) {
+            return rrn;
+        }
+
+        byte_offset = rrn * COMP_REG + sizeof(cab);
+
+        fseek(arq, (long) byte_offset, SEEK_SET);
+        fread(buffer, COMP_REG, 1, arq);
+    }
+
+    fclose(arq);
+    return 1;
+}
+
+int ler_e_mostrar(FILE *arq, char *chave_busca, int ped, char op) {
     char buffer[COMP_REG+1], reg[COMP_REG+1];
     char *chave, *campo;
+    char *info_ped;
     int rrn = 0, byte_offset;
+    int rrn_buffer;
+    int qtde_registros;
 
-    while (rrn <= qtde_reg) {
+    // rewind(arq);
+    fread(&cab, sizeof(cab), 1, arq);
+    // byte_offset = cab.cont_reg * COMP_REG + sizeof(cab);
+    // fseek(arq, (long) byte_offset, SEEK_SET);
+    // rrn_buffer = atoi(strtok(buffer, "$"));
+
+    // qtde_registros = get_ultimo_registro(arq);
+
+    // printf("qtde registros: %d", qtde_registros);
+
+    while (rrn <= cab.cont_reg) {
         byte_offset = rrn * COMP_REG + sizeof(int);
         fseek(arq, (long) byte_offset, SEEK_SET);
         fread(buffer, COMP_REG, 1, arq);
         strcpy(reg, buffer);
         chave = strtok(buffer, "|");
         if (strcasecmp(chave,chave_busca) == 0){
-            campo = strtok(reg, "|");
-
-            while (campo != NULL) {
-                printf("%s|", campo);
-                campo = strtok(NULL, "|");
+            if (op == 'r') {
+                fseek(arq, (long) byte_offset, SEEK_SET);
+                sprintf(info_ped, "%d$", ped);
+                fwrite(info_ped, 4, sizeof(char), arq);
+                rewind(arq);
+                fwrite(&rrn, sizeof(char), 1, arq);
+                printf("Registro removido!\n");
+                printf("\tRRN - %d - byteoffset %d\n", rrn, byte_offset);
+                return 1;
             }
-            printf("\tRRN - %d - byteoffset %d\n", rrn, byte_offset);
-            return 1;
+
+            if (op == 'b') {
+                campo = strtok(reg, "|");
+
+                while (campo != NULL) {
+                    printf("%s|", campo);
+                    campo = strtok(NULL, "|");
+                }
+                printf("\tRRN - %d - byteoffset %d\n", rrn, byte_offset);
+                return 1;
+            }
         }
         rrn++;
     }
-
     return 0;
 }
-
-struct {
-    int cont_reg;
-} cab; //cabeçalho do arquivo - 4 bytes
 
 int importacao (char str[]) {
     FILE *entrada, *saida;
@@ -135,10 +208,148 @@ int importacao (char str[]) {
         fclose(saida);
 }
 
+int imprime_ped() {
+    FILE *arq;
+    char *ped;
+    char buffer[COMP_REG + 1];
+    int rrn, byte_offset, aux, primeiro;
+
+    if ((arq = fopen("dados.dat", "r+b")) == NULL) {
+        printf("Ocorreu um erro ao abrir o arquivo");
+    }
+
+    printf("Sequencia disponivel na PED: ");
+
+    rewind(arq);
+    fread(&cab, sizeof(cab), 1, arq);
+
+    byte_offset = cab.cont_reg * COMP_REG + sizeof(cab);
+
+    fseek(arq, (long) byte_offset, SEEK_SET);
+    fread(buffer, COMP_REG, 1, arq);
+
+    if (!strtok(buffer, "$")) {
+        printf("\nCabecalho: %d\n", cab.cont_reg);
+        return 1;
+    }
+
+    printf("\nCabecalho: %d", cab.cont_reg);
+    while (strtok(buffer, "$")) {
+
+        ped = strtok(buffer, "$");
+        aux = atoi(strtok(buffer, "$"));
+        if (rrn == aux) {
+            return 1;
+        }
+
+        printf("\nProxima Posicao:%s", ped);
+
+        rrn = atoi(strtok(buffer, "$"));
+        // printf("\n %d", rrn);
+        // if (rrn == aux){
+        //     printf("\nChegou ao fim da ped");
+        //     return 1;
+        // }
+        // printf("\nped(inteiro):%d", rrn);
+
+        byte_offset = rrn * COMP_REG + sizeof(cab);
+        // printf("\nbyte_offset(inteiro):%d", byte_offset);
+
+        fseek(arq, (long) byte_offset, SEEK_SET);
+        fread(buffer, COMP_REG, 1, arq);
+        // if (!strtok(buffer, "$")) {
+        //     ped = buffer;
+        //     printf("\nbuffer sem prox:%s", ped);
+        // }
+
+        // ped = strtok(buffer, "$");
+
+        // printf("\naux: %d", rrn);
+        // printf("\nRRN: %d", rrn);
+        // printf("\nproxima pos ped(string):%s", ped);
+        // if (i == 4) {
+        //     exit(0);
+        // }
+        // i++;
+    }
+
+    fclose(arq);
+    return 1;
+}
+
+int executa_operacoes(char str[]) {
+    FILE *arq;
+    int byte_offset;
+    char buffer[COMP_REG + 1];
+    int rrn_buffer;
+    char chave_busca[25];
+    bool achou = false;
+    char op;
+
+    if ((arq = fopen(str, "r+b")) == NULL) {
+        printf("Ocorreu um erro ao abrir o arquivo");
+    }
+
+    fread(&cab, sizeof(cab), 1, arq);
+
+    printf("Escolha a operação a ser feita: ");
+    op = input_char();
+
+    if (op == 'i') {
+
+        //PARTE DO CÓDIGO PARA FAZER INSERÇÃO DE UM REGISTRO
+        byte_offset = cab.cont_reg * COMP_REG + sizeof(cab);
+
+        fseek(arq, (long) byte_offset, SEEK_SET);
+        fread(buffer, COMP_REG, 1, arq);
+
+        rrn_buffer = cab.cont_reg;
+        byte_offset = cab.cont_reg * COMP_REG + sizeof(cab);
+        if (strtok(buffer, "$")) {
+            byte_offset = rrn_buffer * COMP_REG + sizeof(cab);
+            rrn_buffer = atoi(strtok(buffer, "$"));
+            fseek(arq, (long) byte_offset, SEEK_SET);
+            buffer[0] = '\0';
+            printf("Insira os dados do novo campo: ");
+            input(buffer, (COMP_REG + 1));
+
+            fwrite(buffer, COMP_REG, 1, arq);
+            printf("Local: RRN = %d (byte-offset %d)", cab.cont_reg, byte_offset);
+
+            rewind(arq);
+            fwrite(&rrn_buffer, sizeof(cab), 1, arq);
+            return 1;
+        }
+
+        fseek(arq, (long) byte_offset, SEEK_SET);
+        buffer[0] = '\0';
+        printf("Insira os dados do novo campo: ");
+        input(buffer, (COMP_REG + 1));
+
+        fwrite(buffer, COMP_REG, 1, arq);
+        printf("Local: RRN = %d (byte-offset %d)", ++rrn_buffer, byte_offset);
+
+        rewind(arq);
+        fwrite(&rrn_buffer, sizeof(cab), 1, arq);
+    }
+
+    if (op == 'r' || op == 'b') {
+
+        printf("Informe a chave para busca no arquivo: ");
+        input(chave_busca, 25);
+
+        achou = ler_e_mostrar(arq, chave_busca, cab.cont_reg, op);
+
+        if (!achou) {
+            printf("Erro: registro não encontrado");
+        }
+    }
+
+    fclose(arq);
+}
+
 int main(int argc, char *argv[]) {
     FILE *arq;
-    char chave_busca[20];
-    bool achou = false;
 
     if (argc == 3 && strcmp(argv[1], "-i") == 0) {
 
@@ -148,29 +359,12 @@ int main(int argc, char *argv[]) {
 
         printf("Modo de execucao de operacoes ativado ... nome do arquivo = %s\n", argv[2]);
 
-        if ((arq = fopen(argv[2], "r+b")) == NULL) {
-            printf("Ocorreu um erro ao abrir o arquivo");
-        }
-
-        fread(&cab, sizeof(cab), 1, arq);
-
-        printf("Informe a chave para busca no arquivo: ");
-        input(chave_busca, 25);
-
-        achou = ler_e_mostrar(arq, cab.cont_reg, chave_busca);
-
-        if (!achou) {
-            printf("Erro: registro não encontrado");
-        }
-
-        fclose(arq);
-
-        // executa_operacoes(argv[2]);
+        executa_operacoes(argv[2]);
 
     } else if (argc == 2 && strcmp(argv[1], "-p") == 0) {
 
         printf("Modo de impressao da PED ativado ...\n");
-        // imprime_ped();
+        imprime_ped();
 
     } else {
 
